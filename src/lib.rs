@@ -246,7 +246,7 @@ impl PdfWriter {
         let mut written = 0;
         for (i, (object_id, offset)) in self.offsets.iter().enumerate() {
             if written > object_id.get() {
-                panic!("duplicate indirect reference id: {}", object_id.get());
+                panic!("duplicate indirect reference id");
             }
 
             // Fill in free list.
