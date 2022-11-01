@@ -218,6 +218,12 @@ impl PdfWriter {
         self.buf.len()
     }
 
+    fn format_leftpad_str(&self, mut val: i64) -> String {
+        let temp: i64 = 10_000_000_000;
+        val += temp;
+        val.to_string()[1..].to_string()
+    }
+
     /// Write the cross-reference table and file trailer and return the
     /// underlying buffer.
     ///
@@ -233,7 +239,8 @@ impl PdfWriter {
         self.buf.push(b'\n');
 
         if self.offsets.is_empty() {
-            write!(self.buf, "0000000000 65535 f\r\n").unwrap();
+            //write!(self.buf, "0000000000 65535 f\r\n").unwrap();
+            self.buf.extend(b"0000000000 65535 f\r\n");
         }
 
         let mut written = 0;
@@ -257,11 +264,19 @@ impl PdfWriter {
                 }
 
                 let gen = if free_id == 0 { "65535" } else { "00000" };
-                write!(self.buf, "{:010} {} f\r\n", next % xref_len, gen).unwrap();
+                let format_str = self.format_leftpad_str((next % xref_len).into());
+                self.buf.extend(format_str.as_bytes());
+                self.buf.extend(b" ");
+                self.buf.extend(gen.to_string().as_bytes());
+                self.buf.extend(b"f\r\n");
+                //write!(self.buf, "{:010} {} f\r\n", next % xref_len, gen).unwrap();
                 written += 1;
             }
 
-            write!(self.buf, "{:010} 00000 n\r\n", offset).unwrap();
+            let format_str = self.format_leftpad_str(*offset as i64);
+            self.buf.extend(format_str.as_bytes());
+            self.buf.extend(b" 00000 n\r\n");
+            //write!(self.buf, "{:010} 00000 n\r\n", offset).unwrap();
             written += 1;
         }
 
@@ -283,7 +298,9 @@ impl PdfWriter {
 
         // Write where the cross-reference table starts.
         self.buf.extend(b"\nstartxref\n");
-        write!(self.buf, "{}", xref_offset).unwrap();
+        let str_xref = xref_offset.to_string();
+        self.buf.extend(str_xref.as_bytes());
+        //write!(self.buf, "{}", xref_offset).unwrap();
 
         // Write the end of file marker.
         self.buf.extend(b"\n%%EOF");
